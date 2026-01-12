@@ -163,10 +163,20 @@ public class ProceduralMapGenerator : MonoBehaviour
         }
     }
 
-    // Public method to regenerate map with new seed
+    /// <summary>
+    /// Public method to regenerate map with new seed
+    /// If newSeed is 0, generates a new random seed
+    /// </summary>
     public void RegenerateMap(int newSeed = 0)
     {
-        seed = newSeed;
+        if (newSeed == 0)
+        {
+            seed = Random.Range(1, 10000);
+        }
+        else
+        {
+            seed = newSeed;
+        }
         GenerateMap();
     }
 }

@@ -132,6 +132,7 @@ public class GameBootstrap : MonoBehaviour
     void CreatePlaceholderResourcePrefabs(ProceduralMapGenerator generator)
     {
         Debug.Log("Creating placeholder resource prefabs...");
+        Debug.Log("WARNING: These are temporary runtime prefabs. Use Asset Creator Editor tool to create persistent prefabs.");
         
         // Create Tree prefab
         if (generator.treePrefab == null)
@@ -152,7 +153,12 @@ public class GameBootstrap : MonoBehaviour
             resource.dropQuantityMin = 2;
             resource.dropQuantityMax = 5;
             
-            tree.layer = LayerMask.NameToLayer("Resource");
+            int resourceLayer = LayerMask.NameToLayer("Resource");
+            if (resourceLayer != -1)
+                tree.layer = resourceLayer;
+            else
+                Debug.LogWarning("Resource layer not found - please add it in Tag Manager");
+                
             tree.SetActive(false); // Will be instantiated by map generator
             
             // Note: This creates a temporary prefab that won't persist
@@ -178,7 +184,12 @@ public class GameBootstrap : MonoBehaviour
             resource.dropQuantityMin = 1;
             resource.dropQuantityMax = 3;
             
-            rock.layer = LayerMask.NameToLayer("Resource");
+            int resourceLayer = LayerMask.NameToLayer("Resource");
+            if (resourceLayer != -1)
+                rock.layer = resourceLayer;
+            else
+                Debug.LogWarning("Resource layer not found - please add it in Tag Manager");
+                
             rock.SetActive(false);
         }
     }
@@ -193,7 +204,12 @@ public class GameBootstrap : MonoBehaviour
             
             player = new GameObject("Player");
             player.tag = "Player";
-            player.layer = LayerMask.NameToLayer("Player");
+            
+            int playerLayer = LayerMask.NameToLayer("Player");
+            if (playerLayer != -1)
+                player.layer = playerLayer;
+            else
+                Debug.LogWarning("Player layer not found - please add it in Tag Manager");
             
             // Sprite
             SpriteRenderer sr = player.AddComponent<SpriteRenderer>();

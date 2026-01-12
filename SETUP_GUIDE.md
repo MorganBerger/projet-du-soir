@@ -65,6 +65,12 @@ Since this is a new project structure, you'll need to create a scene:
 
 #### C. Create Tiles
 
+**Option 1: Use the Asset Creator Tool (Recommended)**
+1. In Unity Editor, go to **Tools > Game Setup > Create Placeholder Assets**
+2. Click **"Create All Assets"** button
+3. This will automatically create tiles, sprites, and prefabs
+
+**Option 2: Create Manually**
 1. Create a folder: `Assets/Sprites/Tiles`
 2. You'll need to create or import tile graphics:
    - Create simple colored squares in an image editor (32x32 or 64x64)

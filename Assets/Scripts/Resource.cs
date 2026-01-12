@@ -20,6 +20,7 @@ public class Resource : MonoBehaviour
     private int currentHealth;
     private SpriteRenderer spriteRenderer;
     private AudioSource audioSource;
+    private InventorySystem cachedPlayerInventory;
     
     public enum ResourceType
     {
@@ -70,15 +71,20 @@ public class Resource : MonoBehaviour
     
     void DropResources(PlayerController player)
     {
-        if (dropItem == null) return;
+        if (dropItem == null || player == null) return;
         
         int dropQuantity = Random.Range(dropQuantityMin, dropQuantityMax + 1);
         
-        // Try to add to player inventory
-        var inventory = player.GetComponent<InventorySystem>();
-        if (inventory != null)
+        // Cache inventory reference if not already cached
+        if (cachedPlayerInventory == null)
         {
-            bool success = inventory.AddItem(dropItem, dropQuantity);
+            cachedPlayerInventory = player.GetComponent<InventorySystem>();
+        }
+        
+        // Try to add to player inventory
+        if (cachedPlayerInventory != null)
+        {
+            bool success = cachedPlayerInventory.AddItem(dropItem, dropQuantity);
             if (success)
             {
                 Debug.Log($"Collected {dropQuantity}x {dropItem.itemName}");

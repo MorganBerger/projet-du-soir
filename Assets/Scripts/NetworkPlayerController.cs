@@ -43,6 +43,9 @@ public class NetworkPlayerController : NetworkBehaviour
         }
     }
     
+    private float networkUpdateInterval = 0.05f; // 20 updates per second
+    private float lastNetworkUpdateTime;
+    
     void Update()
     {
         if (!IsOwner) return;
@@ -63,10 +66,14 @@ public class NetworkPlayerController : NetworkBehaviour
             spriteRenderer.flipX = horizontal < 0;
         }
         
-        // Send movement to server
-        if (moveInput != Vector2.zero || isSprinting)
+        // Send movement to server at limited rate
+        if (Time.time - lastNetworkUpdateTime >= networkUpdateInterval)
         {
-            UpdateMovementServerRpc(moveInput, isSprinting);
+            if (moveInput != Vector2.zero || isSprinting)
+            {
+                UpdateMovementServerRpc(moveInput, isSprinting);
+                lastNetworkUpdateTime = Time.time;
+            }
         }
     }
     
