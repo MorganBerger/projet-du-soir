@@ -2,6 +2,7 @@ using UnityEngine;
 using EzySlice;
 using UnityEngine.InputSystem;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 /// <summary>
 /// This script handles the dynamic chopping logic for cardboard-style assets.
@@ -9,104 +10,6 @@ using System.Threading.Tasks;
 /// </summary>
 public class CardboardChopSystem : MonoBehaviour
 {
-    // [Header("Material Settings")]
-    // [SerializeField] private Material crossSectionMaterial; // The corrugated cardboard edge texture
-
-    // [Header("Cutting Settings")]
-    // [SerializeField] private LayerMask choppableLayer;
-    // [SerializeField] private float cutForce = 2.0f;
-    // [SerializeField] private float chipLifeTime = 3.0f;
-
-    // void Update()
-    // {
-    //     if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
-    //     {
-    //         Debug.Log("Chop initiated.");
-    //         PerformChop();
-    //     }
-    // }
-
-    // /// <summary>
-    // /// Simulates the axe impact and calculates the slice plane.
-    // /// </summary>
-    // public void PerformChop()
-    // {
-    //     // We cast a ray from the "axe" position forward
-    //     RaycastHit hit;
-    //     if (Physics.Raycast(transform.position, transform.forward, out hit, 1.0f, choppableLayer))
-    //     {
-    //         Debug.Log($"Hit detected on object: {hit.collider.gameObject.name}");
-    //         GameObject target = hit.collider.gameObject;
-
-    //         // Define the slicing plane
-    //         // Position: where the axe hit
-    //         // Normal: Up or Right relative to the axe swing direction
-    //         Vector3 slicePosition = hit.point;
-    //         Vector3 sliceNormal = transform.up;
-
-    //         SliceObject(target, slicePosition, sliceNormal);
-    //     }
-    // }
-
-    // /// <summary>
-    // /// Slices the target object and manages the resulting hulls.
-    // /// </summary>
-    // private void SliceObject(GameObject obj, Vector3 position, Vector3 normal)
-    // {
-    //     // Perform the slice using the EzySlice library
-    //     SlicedHull hull = obj.Slice(position, normal, crossSectionMaterial);
-
-    //     if (hull != null)
-    //     {
-    //         // Create the two new parts
-    //         GameObject upperPart = hull.CreateUpperHull(obj, crossSectionMaterial);
-    //         GameObject lowerPart = hull.CreateLowerHull(obj, crossSectionMaterial);
-
-    //         // Configure the main part (usually the lower one for a tree)
-    //         SetupHull(lowerPart, false);
-    //         lowerPart.layer = obj.layer; // Keep it choppable
-
-    //         // Configure the "chip" (the piece that falls off)
-    //         SetupHull(upperPart, true);
-
-    //         // Inherit the original object's transform properties
-    //         lowerPart.transform.position = obj.transform.position;
-    //         lowerPart.transform.rotation = obj.transform.rotation;
-    //         lowerPart.transform.localScale = obj.transform.localScale;
-
-    //         upperPart.transform.position = obj.transform.position;
-    //         upperPart.transform.rotation = obj.transform.rotation;
-    //         upperPart.transform.localScale = obj.transform.localScale;
-
-    //         // Destroy the original mesh to replace it with the sliced versions
-    //         Destroy(obj);
-    //     }
-    // }
-
-    // /// <summary>
-    // /// Adds necessary components to the new hulls.
-    // /// </summary>
-    // private void SetupHull(GameObject hullObj, bool isChip)
-    // {
-    //     // hullObj.AddComponent<MeshCollider>().convex = true;
-    //     if (isChip)
-    //     {
-    //         hullObj.AddComponent<MeshCollider>().convex = true;
-    //         Rigidbody rb = hullObj.AddComponent<Rigidbody>();
-    //         // Add some force to make the chip fly away
-    //         rb.AddExplosionForce(cutForce, hullObj.transform.position, 1.0f, 1.0f, ForceMode.Impulse);
-    //         // Auto-destroy the small chip after a while
-    //         Destroy(hullObj, chipLifeTime);
-    //     }
-    //     else
-    //     {
-    //         hullObj.AddComponent<MeshCollider>();
-    //         // The main part of the tree should stay static or be kinematic
-    //         // until it's fully cut down
-    //         // rb.isKinematic = true; 
-    //     }
-    // }
-
     [Header("Material Settings")]
     [SerializeField] private Material crossSectionMaterial; // The corrugated cardboard edge texture
 
@@ -115,6 +18,15 @@ public class CardboardChopSystem : MonoBehaviour
     [SerializeField] private float cutForce = 3.0f;
     [SerializeField] private float chipLifeTime = 4.0f;
     [SerializeField] private float notchSize = 0.5f; // How deep the "L" cut goes
+    [SerializeField] private float maxReach = 1.0f;
+
+    [Header("Debug Visualization")]
+    [SerializeField] private bool showGizmos = true;
+    [SerializeField] private float gizmoPlaneSize = 0.5f;
+
+    public GameObject target;
+
+    private Quaternion cutRotation = Quaternion.Euler(0, 0, 20);
 
     void Update()
     {
@@ -132,9 +44,9 @@ public class CardboardChopSystem : MonoBehaviour
     {
         RaycastHit hit;
         // Search for a cardboard object in front of the axe
-        if (Physics.Raycast(transform.position, transform.forward, out hit, 3.0f, choppableLayer))
+        if (Physics.Raycast(transform.position, transform.forward, out hit, maxReach, choppableLayer))
         {
-            GameObject target = hit.collider.gameObject;
+            // GameObject target = hit.collider.gameObject;
 
             // 1. Define the first plane (Horizontal cut)
             Vector3 firstPlanePos = hit.point;
@@ -142,50 +54,52 @@ public class CardboardChopSystem : MonoBehaviour
 
             // 2. Define the second plane (Vertical cut to "exit" the mesh)
             // We shift the second plane deep into the mesh to create the corner
-            Vector3 secondPlanePos = hit.point + (transform.forward * notchSize);
-            Vector3 secondPlaneNormal = transform.forward;
+            Vector3 secondPlanePos = hit.point;// + (transform.forward * notchSize);
+            // Vector3 secondPlaneNormal = transform.right;
+            Vector3 secondPlaneNormal = cutRotation * transform.up;
 
             ExecuteDoubleSlice(target, firstPlanePos, firstPlaneNormal, secondPlanePos, secondPlaneNormal);
         }
     }
 
-    /// <summary>
-    /// Slices the object twice to isolate a corner piece (the chip).
-    /// </summary>
     private void ExecuteDoubleSlice(GameObject obj, Vector3 p1, Vector3 n1, Vector3 p2, Vector3 n2)
     {
+        Debug.Log("Chopping object: " + obj.name);
+
         // FIRST SLICE: Divide the object into Top and Bottom
         SlicedHull firstHull = obj.Slice(p1, n1, crossSectionMaterial);
 
         if (firstHull != null)
         {
+            Debug.Log("First slice successful.");
+            
             GameObject lowerPart = firstHull.CreateLowerHull(obj, crossSectionMaterial);
             GameObject upperPart = firstHull.CreateUpperHull(obj, crossSectionMaterial);
 
-            // SECOND SLICE: We slice the Upper Part again to create the "notch"
-            // This isolates the "corner" from the rest of the upper mesh
+            Debug.Log("Created upper and lower hulls.");
+            // SetupHull(upperPart, false, obj);
+
+            Debug.Log("Performing second slice on upper part.");
             SlicedHull secondHull = upperPart.Slice(p2, n2, crossSectionMaterial);
 
             if (secondHull != null)
             {
-                // The corner piece that will fall off
+                Debug.Log("Second slice successful.");
                 GameObject chipPart = secondHull.CreateLowerHull(upperPart, crossSectionMaterial);
-                // The remaining part of the upper mesh that stays attached
                 GameObject remainingUpperPart = secondHull.CreateUpperHull(upperPart, crossSectionMaterial);
 
-                // Setup the pieces
                 SetupHull(lowerPart, false, obj);
                 SetupHull(remainingUpperPart, false, obj);
                 SetupHull(chipPart, true, obj);
 
-                // Clean up temporary object
                 Destroy(upperPart);
-                // Destroy original object
                 Destroy(obj);
+
+                CombineHulls(lowerPart, remainingUpperPart, obj);
             }
             else
             {
-                // If the second slice fails, we fall back to a simple split
+                Debug.Log("Second slice failed.");
                 SetupHull(lowerPart, false, obj);
                 SetupHull(upperPart, true, obj);
                 Destroy(obj);
@@ -204,42 +118,128 @@ public class CardboardChopSystem : MonoBehaviour
         hullObj.transform.localScale = original.transform.localScale;
         hullObj.layer = original.layer;
 
-        // Add physics
-        hullObj.AddComponent<MeshCollider>().convex = true;
-        Rigidbody rb = hullObj.AddComponent<Rigidbody>();
-
         if (isChip)
         {
             // The small piece flies away
+            Rigidbody rb = hullObj.AddComponent<Rigidbody>();
             rb.AddExplosionForce(cutForce, hullObj.transform.position, 2.0f, 1.0f, ForceMode.Impulse);
             Destroy(hullObj, chipLifeTime);
         }
         else
         {
             // The parts of the tree/object stay in place
-            rb.isKinematic = true;
+            // rb.isKinematic = true;
         }
     }
 
-    void OnDrawGizmos()
+    /// <summary>
+    /// Merges two GameObjects into a single Mesh while preserving materials.
+    /// </summary>
+    private GameObject CombineHulls(GameObject partA, GameObject partB, GameObject original)
     {
-        // Visualize the cutting plane in the editor
-        Gizmos.color = Color.red;
+        GameObject combinedObj = new GameObject(original.name);
+        combinedObj.transform.position = original.transform.position;
+        combinedObj.transform.rotation = original.transform.rotation;
+        combinedObj.transform.localScale = original.transform.localScale;
+        combinedObj.layer = original.layer;
 
-        var start = transform.position;
-        var bottomL = transform.position - transform.right;
-        var topL = bottomL + transform.forward;
+        MeshFilter[] filters = { partA.GetComponent<MeshFilter>(), partB.GetComponent<MeshFilter>() };
+        MeshRenderer[] renderers = { partA.GetComponent<MeshRenderer>(), partB.GetComponent<MeshRenderer>() };
+        
+        // We use the materials from partA as the reference (Original + Cross-section)
+        Material[] sharedMaterials = renderers[0].sharedMaterials;
+        int subMeshCount = sharedMaterials.Length;
+        
+        CombineInstance[] finalSubmeshCombine = new CombineInstance[subMeshCount];
+        
+        // Iterate through each material slot (submesh)
+        for (int m = 0; m < subMeshCount; m++)
+        {
+            List<CombineInstance> subMeshGeometry = new List<CombineInstance>();
+            
+            for (int i = 0; i < filters.Length; i++)
+            {
+                Mesh mesh = filters[i].sharedMesh;
+                // If the part actually has geometry for this material slot
+                if (m < mesh.subMeshCount)
+                {
+                    CombineInstance ci = new CombineInstance();
+                    ci.mesh = mesh;
+                    ci.subMeshIndex = m; // Extract ONLY this material's geometry
+                    ci.transform = combinedObj.transform.worldToLocalMatrix * filters[i].transform.localToWorldMatrix;
+                    subMeshGeometry.Add(ci);
+                }
+            }
+            
+            // Create a temporary mesh that merges all geometry for THIS specific material
+            Mesh mergedSubMesh = new Mesh();
+            mergedSubMesh.CombineMeshes(subMeshGeometry.ToArray(), true); // Merge into one single submesh
+            
+            finalSubmeshCombine[m].mesh = mergedSubMesh;
+            finalSubmeshCombine[m].transform = Matrix4x4.identity;
+        }
 
-        var bottomR = transform.position + transform.right;
-        var topR = bottomR + transform.forward;
+        // Final step: combine the individual material-specific meshes back into one multi-submesh mesh
+        Mesh finalMesh = new Mesh();
+        finalMesh.name = original.name + "_Combined";
+        finalMesh.CombineMeshes(finalSubmeshCombine, false); // Keep as separate submeshes (1 per material)
+        
+        combinedObj.AddComponent<MeshFilter>().mesh = finalMesh;
+        combinedObj.AddComponent<MeshRenderer>().sharedMaterials = sharedMaterials;
 
-        Gizmos.DrawLine(topL, topR);
-        Gizmos.DrawLine(bottomL, bottomR);
-        Gizmos.DrawLine(topL, bottomL);
-        Gizmos.DrawLine(topR, bottomR);
+        combinedObj.AddComponent<MeshCollider>();
+
+        this.target = combinedObj;
+
+        Destroy(partA);
+        Destroy(partB);
+
+        return combinedObj;
+    }
 
 
-        Gizmos.color = Color.blue;
-        Gizmos.DrawLine(start, start + transform.forward);
+    private void OnDrawGizmos()
+    {
+        if (!showGizmos) return;
+
+        // Origin point for the visualization (simulating a hit point at a fixed distance if not hitting anything)
+        Vector3 previewPos = transform.position + (transform.forward * 1.5f);
+        
+        // Raycast check to snap Gizmos to actual surface if possible
+        if (Physics.Raycast(transform.position, transform.forward, out RaycastHit hit, maxReach, choppableLayer))
+        {
+            previewPos = hit.point;
+        }
+
+        // Draw First Plane (Horizontal)
+        Gizmos.color = new Color(0, 1, 1, 0.2f); // Cyan semi-transparent
+        DrawPlaneGizmo(previewPos, transform.up);
+
+        // Draw Second Plane (Vertical/Exit)
+        Gizmos.color = new Color(1, 0, 1, 0.2f); // Magenta semi-transparent
+        
+        Vector3 secondPos = previewPos;
+
+        var secondNormal = cutRotation * transform.up;
+
+        DrawPlaneGizmo(secondPos, secondNormal);
+    }
+    
+    private void DrawPlaneGizmo(Vector3 position, Vector3 normal)
+    {
+        Matrix4x4 rotationMatrix = Matrix4x4.LookAt(position, position + normal, Vector3.up);
+        
+        // We rotate it to be flat against the normal
+        if (normal == transform.forward) rotationMatrix = Matrix4x4.LookAt(position, position + normal, Vector3.up);
+        else rotationMatrix = Matrix4x4.LookAt(position, position + normal, transform.forward);
+
+        Gizmos.matrix = rotationMatrix;
+        // Gizmos.DrawWireCube(Vector3.zero, new Vector3(gizmoPlaneSize, gizmoPlaneSize, 0.005f));
+        
+        Vector3 center = new Vector3(0 + gizmoPlaneSize / 8, 0, 0);
+
+        // Gizmos.DrawCube(Vector3.zero, new Vector3(gizmoPlaneSize / 2, gizmoPlaneSize / 2, 0.005f));
+        Gizmos.DrawCube(center, new Vector3(gizmoPlaneSize / 4, gizmoPlaneSize / 2, 0.005f));
+        Gizmos.matrix = Matrix4x4.identity;
     }
 }
