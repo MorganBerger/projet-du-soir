@@ -19,7 +19,7 @@ public class MapGenerator : MonoBehaviour
         
     }
 
-    void OnDrawGizmos()
+    void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.green;
 
