@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3218a516312f343c8b6fcc3e8fdaa3aa, type: 3}
+  m_Name: treeCuttingPositions
+  m_EditorClassIdentifier: Assembly-CSharp::CuttingPositions
+  positions:
+  - {x: -0.109256744, y: -0.26159847, z: -0.008522142}
+  - {x: 0.12662482, y: -0.26159838, z: -0.008522142}
+  - {x: -0.22030747, y: -0.14262092, z: -0.008522146}
+  - {x: 0.2426331, y: -0.14262134, z: -0.008522146}
+  - {x: -0.42355847, y: -0.023644328, z: -0.008522152}
+  - {x: 0.4379635, y: -0.02364391, z: -0.008522152}
+  - {x: -0.42157573, y: 0.095333576, z: -0.008522157}
+  - {x: 0.47167516, y: 0.095333636, z: -0.008522157}
+  - {x: -0.32738656, y: 0.214311, z: -0.008522162}
+  - {x: 0.40623462, y: 0.21431094, z: -0.008522162}
+  - {x: -0.31449747, y: 0.3332883, z: -0.008522168}
+  - {x: 0.336828, y: 0.3332883, z: -0.008522168}
