@@ -181,7 +181,7 @@ public class CardboardChopSystem : MonoBehaviour
 
         // Final step: combine the individual material-specific meshes back into one multi-submesh mesh
         Mesh finalMesh = new Mesh();
-        finalMesh.name = original.name + "_Combined";
+        finalMesh.name = original.name;
         finalMesh.CombineMeshes(finalSubmeshCombine, false); // Keep as separate submeshes (1 per material)
         
         combinedObj.AddComponent<MeshFilter>().mesh = finalMesh;
